@@ -82,7 +82,7 @@ body.land #msg{flex:none;width:100%;text-align:center;max-height:calc(var(--ts)*
     • Mỗi bên 5 cột × 5 quân úp (bộ 50 quân, mỗi biểu tượng đúng 5 quân) + 1 quân trắng trống để mở màn.<br>
     • Người đi trước đặt quân trắng lên đầu một cột của mình: cột đó thành 6 ô (không đẩy quân nào ra), rồi chạm một cột để rút quân cuối cột. Mỗi lần có quân đặt lên cột đó, quân trắng bị đẩy xuống dần; khi bị đẩy ra ngoài, người đặt cầm quân trắng đặt tiếp vào cột bất kỳ để đẩy quân cuối cột đó ra và đi tiếp.<br>
     • Quân lật ra cùng loại của mình thì đặt tiếp, khác loại thì chuyển cho đối thủ.<br>
-    • <b>Phải đặt cùng biểu tượng với cột</b> (cột đang là cờ Ý thì chỉ đặt cờ Ý). Đặt sai sẽ có thông báo và bạn đặt lại.<br>
+    • <b>Phải đặt cùng biểu tượng với cột</b> (cột đang là cờ Ý thì chỉ đặt cờ Ý). Nếu biểu tượng đó đã hiện ở một cột thì bắt buộc đặt vào cột đó; chỉ khi chưa cột nào có thì mới được đặt vào cột chưa có quân ngửa. Đặt sai sẽ có thông báo và bạn đặt lại.<br>
     • Khi hết quân cầm thì chạm một cột để rút quân cuối cột.<br>
     
     • Ai mở hết quân úp trên bảng của mình trước thì thắng. Nếu cột chứa quân trắng (6 ô) vẫn còn trên bảng thì phải tiếp tục đẩy cột đó cho đến khi quân trắng ra ngoài mới thắng.
@@ -228,7 +228,15 @@ function start(){
   fit(); // đo sau khi đã có đủ tên + quân để chiều cao chính xác
 }
 const topKind=col=>col.find(x=>x.up&&!x.w);
-const compat=(col,t)=>{if(t.w)return true;const k=topKind(col);return !k||(k.t===t.t&&k.k===t.k)};
+// Quân t đặt được vào cột c của bên s khi: là quân trắng; hoặc cột c đang là đúng biểu tượng đó;
+// hoặc cột c chưa có quân ngửa VÀ biểu tượng đó chưa nằm ở cột nào khác (nếu đã nằm ở cột khác thì bắt buộc đặt vào cột đó)
+const same=(a,t)=>a&&a.t===t.t&&a.k===t.k;
+const compat=(s,c,t)=>{
+  if(t.w)return true;
+  const k=topKind(B[s][c]);
+  if(k)return same(k,t);
+  return !B[s].some((col,i)=>i!==c&&same(topKind(col),t));
+};
 const allUp=s=>!B[s].flat().some(x=>!x.up);
 const bottomHidden=(s,c)=>{const col=B[s][c];if(!col.length)return false;if(!col[col.length-1].up)return true;
   return allUp(s)&&col.some(x=>x.w)}; // đã mở hết: được đẩy tiếp cột chứa quân trắng cho đến khi quân trắng ra ngoài
@@ -291,10 +299,12 @@ function act(s,c){
     return finish(m);
   }
   const col=B[s][c],who=nm(s);
-  if(!compat(col,hand)&&CS.some(i=>compat(B[s][i],hand))){
-    busy=false;const k=topKind(col);
+  if(!compat(s,c,hand)&&CS.some(i=>compat(s,i,hand))){
+    busy=false;
     Snd.sfx("wrong");
-    setMsg(`⚠️ Sai cột! Cột ${c+1} đang là ${label(k)}, phải đặt ${label(hand)} vào đúng cột cùng biểu tượng (hoặc cột chưa có quân ngửa). ${who} đặt lại nhé.`);
+    const j=CS.find(i=>topKind(B[s][i])&&same(topKind(B[s][i]),hand)); // cột đang hiện đúng biểu tượng này
+    const where=j!==undefined?`cột ${j+1} (cột đang là ${label(hand)})`:"một cột chưa có quân ngửa";
+    setMsg(`⚠️ Sai cột! ${label(hand)} phải đặt vào ${where}. ${who} đặt lại nhé.`);
     return;
   }
   const len=col.length;
@@ -317,7 +327,7 @@ function act(s,c){
 function botAct(){
   busy=false;
   if(!hand){const v=CS.filter(c=>bottomHidden("bot",c));return act("bot",rnd(v))}
-  const ok=CS.filter(c=>compat(B.bot[c],hand));
+  const ok=CS.filter(c=>compat("bot",c,hand));
   const useful=ok.filter(c=>B.bot[c].some(x=>!x.up||x.w));
   const pool0=useful.length?useful:ok;
   let c;
