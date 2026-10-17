@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>Ghép Cặp Mạt Chược</title>
+<style>
+:root{--bg:#2f5d86;--felt:#274f75;--ink:#fff;--red:#d8222c;--red2:#a8141d;--tile:#fbf7ee;--edge:#cfc7b3;--accent:#ffd54a;color-scheme:dark;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root{--bg:#1f3f5e;--felt:#1a3752}}
+:root[data-theme="dark"]{--bg:#1f3f5e;--felt:#1a3752}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent;-webkit-user-select:none;user-select:none}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:system-ui,-apple-system,"Segoe UI",sans-serif;display:flex;flex-direction:column;align-items:center;min-height:100vh;padding:10px 12px 24px}
+h1{font-size:18px;margin:4px 0 8px}
+:root{--ts:60px}
+body.playing{height:calc(100vh - env(safe-area-inset-top,0px) - env(safe-area-inset-bottom,0px));height:calc(100dvh - env(safe-area-inset-top,0px) - env(safe-area-inset-bottom,0px));overflow:hidden;padding:42px 6px 6px;justify-content:center}
+body.playing h1{display:none}
+#game{display:flex;flex-direction:column;align-items:center;gap:calc(var(--ts)*.1)}
+body.land #game{flex-direction:row;justify-content:center;gap:12px}
+.side{width:auto;background:var(--felt);border-radius:calc(var(--ts)*.22);padding:calc(var(--ts)*.1) calc(var(--ts)*.14) calc(var(--ts)*.14);margin:0;border:2px solid transparent}
+.side.active{border-color:var(--accent)}
+.bar{display:flex;justify-content:space-between;gap:8px;font-size:clamp(10px,calc(var(--ts)*.22),13px);margin-bottom:calc(var(--ts)*.08);white-space:nowrap}
+.board{display:grid;grid-template-columns:repeat(5,var(--ts));gap:calc(var(--ts)*.06);align-items:start;min-height:calc(var(--ts)*6.6 + 20px)}
+.col{display:flex;flex-direction:column;gap:3px;border-radius:6px;padding:2px;min-height:calc(var(--ts)*1.1)}
+.col.pick{background:rgba(255,213,74,.22);cursor:pointer;outline:2px dashed var(--accent)}
+.t{aspect-ratio:1/1.1;border-radius:6px;display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:calc(var(--ts)*.5);background:linear-gradient(var(--red),var(--red2));box-shadow:0 2px 0 #7d0e15;color:#000}
+.t.up{background:var(--tile);box-shadow:0 2px 0 var(--edge)}
+.small .t{border-radius:4px}
+.fl{width:72%;height:52%;border:1px solid #aaa;border-radius:2px}
+.cd{font-size:max(7px,calc(var(--ts)*.15));line-height:1;color:#222;margin-top:2px;font-weight:800;letter-spacing:.5px}
+.f0{background:linear-gradient(90deg,#009246 33%,#fff 33% 66%,#ce2b37 66%)}
+.f1{background:linear-gradient(90deg,#0055a4 33%,#fff 33% 66%,#ef4135 66%)}
+.f2{background:linear-gradient(#000 33%,#dd0000 33% 66%,#ffce00 66%)}
+.f3{background:radial-gradient(circle,#bc002d 34%,#fff 36%)}
+.f4{background:linear-gradient(#fff 50%,#dc143c 50%)}
+#mid{display:flex;align-items:center;gap:8px;width:calc(var(--ts)*5.55 + 4px);height:calc(var(--ts)*1.6 + 10px);min-width:0}
+#hand{width:calc(var(--ts)*.95);height:calc(var(--ts)*1.05);font-size:calc(var(--ts)*.55);flex:none;box-shadow:0 4px 0 var(--edge)}
+#hand.none{opacity:.2}
+#hand.dbl{width:var(--ts);height:calc(var(--ts)*2.2);justify-content:space-between;padding:0;font-size:calc(var(--ts)*.5)}
+.hf{flex:1;width:100%;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.hf+.hf{border-top:2px dashed #b9b19a}
+.hf .fl{width:calc(var(--ts)*.62);height:calc(var(--ts)*.4)}
+#msg,#msgTop{font-size:clamp(10px,calc(var(--ts)*.22),14px);line-height:1.3;flex:1;min-width:0;max-height:100%;overflow:auto;white-space:pre-line}
+#mid.two{height:calc(var(--ts)*2.2 + 4px);width:calc(100vw - 14px);max-width:560px}
+#mid.two #msg,#mid.two #msgTop{height:100%;text-align:center;background:rgba(0,0,0,.2);border-radius:10px;padding:4px 6px;display:flex;align-items:center;justify-content:center}
+body.land #mid{width:calc(var(--ts)*2.6);height:auto;flex-direction:column;justify-content:center}
+body.land #msg{flex:none;width:100%;text-align:center;max-height:calc(var(--ts)*4)}
+.setup{width:100%;max-width:360px;background:var(--felt);border-radius:14px;padding:14px;text-align:center}
+.setup h2{font-size:15px;margin:10px 0 6px}
+.opts{display:flex;gap:8px;justify-content:center}
+.opt{flex:1;background:rgba(255,255,255,.1);color:#fff;border:2px solid transparent;border-radius:10px;padding:10px 6px;font-size:14px;cursor:pointer}
+.opt.on{border-color:var(--accent);background:rgba(255,213,74,.18)}
+.btn{margin-top:14px;background:var(--accent);color:#2a2000;border:0;border-radius:10px;padding:12px 26px;font-weight:700;font-size:16px;cursor:pointer}
+.rules{font-size:12px;opacity:.9;text-align:left;margin-top:12px;line-height:1.5}
+.hide{display:none!important}
+.flip{transform:rotate(180deg)}
+.ib{position:fixed;top:calc(4px + env(safe-area-inset-top,0px));width:34px;height:34px;border-radius:50%;border:0;background:rgba(0,0,0,.3);color:#fff;font-size:16px;cursor:pointer;z-index:10;padding:0}
+#snd{right:8px}
+#again{left:8px}
+</style>
+</head>
+<body>
+<button id="snd" class="ib" aria-label="Bật/tắt âm thanh">🔊</button>
+<h1>🀄 GHÉP CẶP MẠT CHƯỢC</h1>
+
+<div class="setup" id="setup">
+  <h2>Chế độ</h2>
+  <div class="opts" id="optM"><button class="opt on" data-v="1">Chơi với máy</button><button class="opt" data-v="2">2 người (chung máy)</button></div>
+  <h2 id="hT">Bạn chọn loại quân</h2>
+  <div class="opts" id="optT">
+    <button class="opt on" data-v="0">😀😎😡<br>Cảm xúc</button>
+    <button class="opt" data-v="1">🇮🇹🇫🇷🇩🇪<br>Quốc kỳ</button>
+  </div>
+  <h2>Thứ tự đi</h2>
+  <div class="opts" id="optF">
+    <button class="opt on" id="f1" data-v="me">Tôi đi trước</button>
+    <button class="opt" id="f2" data-v="bot">Nhường máy</button>
+  </div>
+  <button class="btn" id="go">Bắt đầu</button>
+  <div class="rules">
+    <b>Luật:</b><br>
+    • Mỗi bên 5 cột × 5 quân úp (bộ 50 quân, mỗi biểu tượng đúng 5 quân) + 1 quân trắng trống để mở màn.<br>
+    • Người đi trước đặt quân trắng lên đầu một cột của mình: cột đó thành 6 ô (không đẩy quân nào ra), rồi chạm một cột để rút quân cuối cột. Mỗi lần có quân đặt lên cột đó, quân trắng bị đẩy xuống dần; khi bị đẩy ra ngoài, người đặt cầm quân trắng đặt tiếp vào cột bất kỳ để đẩy quân cuối cột đó ra và đi tiếp.<br>
+    • Quân lật ra cùng loại của mình thì đặt tiếp, khác loại thì chuyển cho đối thủ.<br>
+    • <b>Phải đặt cùng biểu tượng với cột</b> (cột đang là cờ Ý thì chỉ đặt cờ Ý). Đặt sai sẽ có thông báo và bạn đặt lại.<br>
+    • Khi hết quân cầm thì chạm một cột để rút quân cuối cột.<br>
+    
+    • Ai mở hết quân úp trên bảng của mình trước thì thắng. Nếu cột chứa quân trắng (6 ô) vẫn còn trên bảng thì phải tiếp tục đẩy cột đó cho đến khi quân trắng ra ngoài mới thắng.
+  </div>
+</div>
+
+<div id="game" class="hide">
+  <div class="side small" id="botSide"><div class="bar"><span id="botName"></span><span id="botLeft"></span></div><div class="board" id="botBoard"></div></div>
+  <div id="mid"><div id="msgTop" class="flip hide"></div><div class="t up" id="hand"></div><div id="msg"></div></div>
+  <div class="side" id="meSide"><div class="bar"><span id="meName"></span><span id="meLeft"></span></div><div class="board" id="meBoard"></div></div>
+  <button class="ib" id="again" aria-label="Về màn hình chọn">🏠</button>
+</div>
+
+<script>
+const EMO=["😀","😎","😡","😭","😴"], FLN=["Ý","Pháp","Đức","Nhật","Ba Lan"], FC=["IT","FR","DE","JP","PL"], TN=["Cảm xúc","Quốc kỳ"];
+const $=id=>document.getElementById(id);
+const shuffle=a=>{for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a};
+const rnd=a=>a[Math.floor(Math.random()*a.length)];
+
+/* ================= ÂM THANH (Web Audio, không cần file) ================= */
+const Snd=(()=>{
+  let ctx=null,master,mus,fx,muted=false,mode="menu",timer=null,nt=0,st=0,mi=4;
+  try{muted=localStorage.getItem("mj_mute")==="1"}catch(e){}
+  const SC=[261.63,293.66,329.63,392,440,523.25,587.33,659.25,783.99]; // ngũ cung C
+  const ROOT=[130.81,110,174.61,196];
+  const note=(f,t,d,v,type,dest)=>{
+    const o=ctx.createOscillator(),g=ctx.createGain();
+    o.type=type||"sine";o.frequency.value=f;
+    g.gain.setValueAtTime(0.0001,t);
+    g.gain.linearRampToValueAtTime(v,t+0.02);
+    g.gain.exponentialRampToValueAtTime(0.0001,t+d);
+    o.connect(g);g.connect(dest||fx);o.start(t);o.stop(t+d+0.05);
+  };
+  const sched=()=>{
+    if(!ctx||ctx.state!=="running")return;
+    const beat=mode==="game"?0.75:1.0;
+    if(nt<ctx.currentTime)nt=ctx.currentTime+0.05;
+    while(nt<ctx.currentTime+0.6){
+      if(st%4===0)note(ROOT[(st>>2)%4],nt,beat*4,0.07,"triangle",mus);
+      if(Math.random()<(mode==="game"?0.75:0.6)){
+        mi=Math.max(0,Math.min(8,mi+rnd([-2,-1,-1,1,1,2])));
+        note(SC[mi],nt,1.6,0.045,"sine",mus);
+      }
+      st++;nt+=beat;
+    }
+  };
+  const setMaster=()=>{if(ctx)master.gain.setTargetAtTime(muted?0:1,ctx.currentTime,0.05)};
+  const api={
+    init(){
+      if(!ctx){
+        const AC=window.AudioContext||window.webkitAudioContext;if(!AC)return;
+        ctx=new AC();
+        master=ctx.createGain();master.gain.value=muted?0:1;master.connect(ctx.destination);
+        mus=ctx.createGain();mus.gain.value=0.6;mus.connect(master);
+        fx=ctx.createGain();fx.gain.value=1;fx.connect(master);
+        timer=setInterval(sched,150);
+      }
+      if(ctx.state==="suspended"&&!document.hidden)ctx.resume();
+    },
+    resume(){if(ctx&&ctx.state==="suspended")ctx.resume()},
+    suspend(){if(ctx&&ctx.state==="running")ctx.suspend()},
+    setMode(m){mode=m},
+    toggle(){muted=!muted;try{localStorage.setItem("mj_mute",muted?"1":"0")}catch(e){}setMaster();return muted},
+    isMuted:()=>muted,
+    sfx(n,d){
+      if(!ctx||muted)return;
+      const t=ctx.currentTime+(d||0);
+      switch(n){
+        case "ui":note(660,t,.12,.10);note(990,t+.04,.10,.05);break;
+        case "draw":note(392,t,.15,.10,"triangle");break;
+        case "place":note(330,t,.12,.12,"triangle");note(247,t+.05,.15,.08);break;
+        case "good":note(523,t,.20,.10);note(659,t+.09,.25,.10);break;
+        case "bad":note(392,t,.20,.09,"triangle");note(311,t+.10,.30,.08,"triangle");break;
+        case "wrong":note(196,t,.18,.10,"triangle");note(196,t+.2,.18,.10,"triangle");break;
+        case "win":[523,659,784,1047].forEach((f,i)=>note(f,t+i*.14,.6,.10));break;
+      }
+    }
+  };
+  return api;
+})();
+["pointerdown","keydown","touchstart"].forEach(e=>addEventListener(e,()=>Snd.init(),{passive:true}));
+document.addEventListener("visibilitychange",()=>{document.hidden?Snd.suspend():Snd.resume()});
+const sndBtn=$("snd");
+const updSnd=()=>{sndBtn.textContent=Snd.isMuted()?"🔇":"🔊"};
+sndBtn.onclick=()=>{Snd.init();Snd.toggle();updSnd();if(!Snd.isMuted())Snd.sfx("ui")};
+updSnd();
+
+/* ================= GAME ================= */
+const face=t=>!t?"":t.w?"":t.t===0?EMO[t.k]:`<div class="fl f${t.k}"></div>`+(twoP?`<b class="cd">${FC[t.k]}</b>`:"");
+const label=t=>t.w?"quân trắng":t.t===0?EMO[t.k]:"cờ "+FLN[t.k];
+let cfg={t:0,first:"me",mode:1},B,hand,cur,myT,busy,over,twoP=false,lastEv="",firstW=true;
+const nm=s=>twoP?(s==="me"?"Người 1":"Người 2"):(s==="me"?"Bạn":"Máy");
+const typeOf=s=>s==="me"?myT:1-myT;
+const other=s=>s==="me"?"bot":"me";
+const CS=[0,1,2,3,4];
+const setMsg=t=>{$("msg").textContent=t;$("msgTop").textContent=t};
+
+document.querySelectorAll("#optT .opt").forEach(b=>b.onclick=()=>{cfg.t=+b.dataset.v;sel("optT",b)});
+document.querySelectorAll("#optF .opt").forEach(b=>b.onclick=()=>{cfg.first=b.dataset.v;sel("optF",b)});
+document.querySelectorAll("#optM .opt").forEach(b=>b.onclick=()=>{
+  cfg.mode=+b.dataset.v;sel("optM",b);const p=cfg.mode===2;
+  $("hT").textContent=p?"Người 1 chọn loại quân":"Bạn chọn loại quân";
+  $("f1").textContent=p?"Người 1 đi trước":"Tôi đi trước";
+  $("f2").textContent=p?"Người 2 đi trước":"Nhường máy";
+});
+function sel(g,b){document.querySelectorAll("#"+g+" .opt").forEach(x=>x.classList.remove("on"));b.classList.add("on");Snd.sfx("ui")}
+$("go").onclick=()=>{Snd.sfx("ui");start()};
+$("again").onclick=()=>{Snd.sfx("ui");Snd.setMode("menu");over=true;$("game").classList.add("hide");$("setup").classList.remove("hide");document.body.classList.remove("playing","land")};
+// Co bố cục cho vừa khung: thử từng cỡ quân (--ts) từ lớn xuống nhỏ đến khi cả 2 bên nằm gọn, không cần cuộn
+function fit(){
+  if($("game").classList.contains("hide"))return;
+  const bd=document.body,g=$("game"),rs=document.documentElement.style;
+  const W=bd.clientWidth-12,H=bd.clientHeight-48;
+  bd.classList.toggle("land",!twoP&&W>H*1.1);
+  for(let ts=Math.min(72,Math.floor(W/5.6));ts>=14;ts-=2){
+    rs.setProperty("--ts",ts+"px");
+    const r=g.getBoundingClientRect();
+    if(r.height<=H&&r.width<=W)break;
+  }
+}
+addEventListener("resize",fit);
+window.__back=()=>{if(!$("game").classList.contains("hide")){$("again").click();return true}return false};
+
+function start(){
+  myT=cfg.t;twoP=cfg.mode===2;
+  const all=[];
+  for(const t of [0,1])for(let k=0;k<5;k++)for(let n=0;n<5;n++)all.push({t,k,up:false});
+  shuffle(all);
+  const mk=a=>CS.map(c=>a.slice(c*5,c*5+5));
+  B={me:mk(all.slice(0,25)),bot:mk(all.slice(25))};
+  firstW=true;hand={w:true,t:-1,k:-1,up:true}; // quân trắng mở đầu (quân thứ 51, trống)
+  cur=cfg.first;over=false;busy=false;
+  Snd.setMode("game");
+  $("setup").classList.add("hide");$("game").classList.remove("hide");
+  $("botSide").classList.toggle("flip",twoP);
+  $("mid").classList.toggle("two",twoP);
+  $("msgTop").classList.toggle("hide",!twoP);
+  document.body.classList.add("playing");
+  $("meName").textContent="🧑 "+nm("me")+" ("+TN[myT]+")";
+  $("botName").textContent=(twoP?"🧑 ":"🤖 ")+nm("bot")+" ("+TN[1-myT]+")";
+  lastEv=nm(cur)+" đi trước, cầm sẵn "+label(hand)+".";
+  turn();
+  fit(); // đo sau khi đã có đủ tên + quân để chiều cao chính xác
+}
+const topKind=col=>col.find(x=>x.up&&!x.w);
+const compat=(col,t)=>{if(t.w)return true;const k=topKind(col);return !k||(k.t===t.t&&k.k===t.k)};
+const allUp=s=>!B[s].flat().some(x=>!x.up);
+const bottomHidden=(s,c)=>{const col=B[s][c];if(!col.length)return false;if(!col[col.length-1].up)return true;
+  return allUp(s)&&col.some(x=>x.w)}; // đã mở hết: được đẩy tiếp cột chứa quân trắng cho đến khi quân trắng ra ngoài
+const canDraw=s=>CS.some(c=>bottomHidden(s,c));
+
+function render(){
+  for(const s of ["me","bot"]){
+    const el=$(s+"Board");el.innerHTML="";
+    const can=cur===s&&!busy&&!over&&(s==="me"||twoP);
+    B[s].forEach((col,c)=>{
+      const d=document.createElement("div");
+      const ok=can&&(hand?true:bottomHidden(s,c));
+      d.className="col"+(ok?" pick":"");
+      col.forEach(t=>{const e=document.createElement("div");e.className="t"+(t.up?" up":"");if(t.up)e.innerHTML=face(t);d.appendChild(e)});
+      d.onclick=()=>{if(ok)act(s,c)};
+      el.appendChild(d);
+    });
+    $(s+"Left").textContent="Còn úp: "+B[s].flat().filter(x=>!x.up).length;
+    $(s+"Side").classList.toggle("active",cur===s&&!over);
+  }
+  const h=$("hand");
+  if(twoP){ // quân đang cầm hiển thị hai đầu: mỗi người đều thấy một đầu xuôi chiều
+    const f=face(hand);
+    h.classList.add("dbl");
+    h.innerHTML=`<div class="hf">${f}</div><div class="hf flip">${f}</div>`;
+  }else{
+    h.classList.remove("dbl");
+    h.innerHTML=face(hand);
+  }
+  h.classList.toggle("none",!hand);
+}
+function turn(){
+  busy=false;
+  if(!over&&!hand&&!canDraw(cur)){cur=other(cur);if(!canDraw(cur)){over=true;lastEv="Hết quân để rút – ván hòa!"}}
+  render();
+  if(over){setMsg(lastEv);return}
+  const bot=cur==="bot"&&!twoP;
+  const p=bot?"Máy đang chơi...":nm(cur)+(hand?": chạm một cột để đặt "+label(hand)+" lên đầu cột.":": chạm một cột để rút quân cuối cột.");
+  setMsg(lastEv+"\n"+p);
+  if(bot){busy=true;setTimeout(botAct,900)}
+}
+function finish(m){
+  for(const s of ["me","bot"]){
+    if(!B[s].flat().some(x=>!x.up||x.w)){over=true;m+="\n🎉 "+nm(s)+" đã mở toàn bộ quân – "+nm(s).toUpperCase()+" THẮNG!";Snd.sfx("win",.3);break}
+  }
+  lastEv=m;render();setMsg(m);if(!over)setTimeout(turn,1100)
+}
+
+function act(s,c){
+  if(busy||over||cur!==s)return;
+  busy=true;
+  if(!hand){
+    if(!bottomHidden(s,c)){busy=false;return}
+    const X=B[s][c].pop();X.up=true;X.src={side:s,col:c};hand=X;
+    Snd.sfx("draw");
+    let m=`${nm(s)} rút quân cuối cột ${c+1}: ${label(X)}.`;
+    const same=X.w||X.t===typeOf(s);
+    if(same)m+=" Cùng loại, đi tiếp!";else{cur=other(s);m+=" Khác loại, chuyển cho "+nm(cur).toLowerCase()+"."}
+    Snd.sfx(same?"good":"bad",.12);
+    return finish(m);
+  }
+  const col=B[s][c],who=nm(s);
+  if(!compat(col,hand)&&CS.some(i=>compat(B[s][i],hand))){
+    busy=false;const k=topKind(col);
+    Snd.sfx("wrong");
+    setMsg(`⚠️ Sai cột! Cột ${c+1} đang là ${label(k)}, phải đặt ${label(hand)} vào đúng cột cùng biểu tượng (hoặc cột chưa có quân ngửa). ${who} đặt lại nhé.`);
+    return;
+  }
+  const len=col.length;
+  col.unshift({t:hand.t,k:hand.k,w:hand.w,up:true});
+  Snd.sfx("place");
+  // Đẩy quân cuối cột ra khi cột đã đủ 5 ô; riêng lần đặt quân trắng mở màn thì cột thành 6 ô, không đẩy
+  const opening=hand.w&&firstW;if(opening)firstW=false;
+  let X=(len>=5&&!opening)?col.pop():null;
+  let m=`${who} đặt ${label(hand)} vào cột ${c+1}`;
+  if(!X){const w=hand.w;hand=null;return finish(m+(w?": cột này giờ có 6 ô, không đẩy quân nào ra; ":". Không đẩy quân nào ra; ")+who.toLowerCase()+" rút quân cuối cột tiếp.")}
+  X.up=true;X.src={side:s,col:c};hand=X;
+  m+=`, đẩy ra ${label(X)}.`;
+  const same=X.w||X.t===typeOf(s);
+  if(same)m+=" Cùng loại, "+who.toLowerCase()+" đi tiếp!";
+  else{cur=other(s);m+=" Khác loại, chuyển cho "+nm(cur).toLowerCase()+"."}
+  Snd.sfx(same?"good":"bad",.12);
+  finish(m);
+}
+// Máy: ưu tiên cột cùng biểu tượng, rồi cột có quân trắng, rồi cột chưa có quân ngửa
+function botAct(){
+  busy=false;
+  if(!hand){const v=CS.filter(c=>bottomHidden("bot",c));return act("bot",rnd(v))}
+  const ok=CS.filter(c=>compat(B.bot[c],hand));
+  const useful=ok.filter(c=>B.bot[c].some(x=>!x.up||x.w));
+  const pool0=useful.length?useful:ok;
+  let c;
+  if(!pool0.length)c=rnd(CS); // bị ép đặt sai
+  else{
+    const same=pool0.filter(c=>{const k=topKind(B.bot[c]);return k&&k.t===hand.t&&k.k===hand.k});
+    const hasW=pool0.filter(c=>B.bot[c].some(x=>x.w));
+    const empty=pool0.filter(c=>!topKind(B.bot[c]));
+    c=rnd(same.length?same:hasW.length?hasW:empty.length?empty:pool0);
+  }
+  act("bot",c);
+}
+</script>
+</body>
+</html>
